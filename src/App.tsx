@@ -1,5 +1,5 @@
 import { Component, useContext, createEffect, Show, For } from "solid-js";
-import { Router, Route, useNavigate, useParams } from "@solidjs/router";
+import { HashRouter, Route, useNavigate, useParams } from "@solidjs/router";
 import {
   PassphraseAuthBasicUI,
   useAccount,
@@ -82,7 +82,7 @@ const HomeScreen: Component = () => {
 
 const App: Component = () => {
   return (
-    <Router root={(props) => {
+    <HashRouter root={(props) => {
       const navigate = useNavigate();
 
       useAcceptInvite({
@@ -95,7 +95,7 @@ const App: Component = () => {
     }}>
       <Route path="/" component={HomeScreen} />
       <Route path="/project/:projectId" component={ProjectTodoTable} />
-    </Router>
+    </HashRouter>
   );
 };
    
