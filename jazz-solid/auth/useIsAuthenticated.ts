@@ -4,13 +4,38 @@ import { useAuthStorage, useJazzContext } from '../contextProvider';
 /**
  * Hook: returns true if user is authenticated.
  */
-// This implentation is what we want to use, but it is not working because when logging in, isAuth is updated just before the context.
-// so instead the next implementation is used because isAuth is update only when the context is updated
-export function useIsAuthenticatedTOOOOFAST() {
+// Hacky implementation to get the authentication status
+// the weird case is when the auth says it is authenticated
+// but the context is not yet updated, so we need to wait a little bit
+
+export function useIsAuthenticated() {
   const auth = useAuthStorage();
   const [isAuth, setIsAuth] = createSignal(auth.isAuthenticated);
 
+  let hackyWaiting: null | number = null;
+
   const unsub = auth.onUpdate(() => {
+    if(!auth.isAuthenticated) { // do not wait because we need to stop the sync right now
+      setIsAuth(false);
+      return;
+    }
+    // otherwise we wait a little bit because the context may be updating now
+    // and we do not want to update the context before the auth
+    hackyWaiting = setTimeout(() => {
+        setIsAuth(auth.isAuthenticated);
+        hackyWaiting = null;
+      }
+      , 300);
+  });
+
+  const ctx = useJazzContext();
+  createEffect(() => {
+    ctx();
+    // the context is updated, we do not need to wait anymore
+    if (hackyWaiting) { 
+      clearTimeout(hackyWaiting);
+      hackyWaiting = null;
+    }
     setIsAuth(auth.isAuthenticated);
   });
   
@@ -18,19 +43,6 @@ export function useIsAuthenticatedTOOOOFAST() {
     unsub()
   });
 
-  return isAuth;
-}
-
-export function useIsAuthenticated() {
-  const ctx = useJazzContext();
-  const auth = useAuthStorage();
-  const [isAuth, setIsAuth] = createSignal(auth.isAuthenticated);
-
-  createEffect(() => {
-    ctx();
-    setIsAuth(auth.isAuthenticated);
-  });
-  
   return isAuth;
 }
 
